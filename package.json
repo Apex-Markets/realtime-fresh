@@ -1,0 +1,17 @@
+{
+  "name": "real-time",
+  "version": "1.0.0",
+  "description": "Apex Markets real-time chat backend with WebSockets and PostgreSQL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0",
+    "pg": "^8.11.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

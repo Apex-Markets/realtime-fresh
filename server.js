@@ -6,8 +6,10 @@ const server = require('http').createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // DB pool (Render's DATABASE_URL env var)
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 /* === ADD THIS DEBUG BLOCK RIGHT HERE === */
 pool.query('SELECT current_database()', [], (err, res) => {
   if (err) { console.error('DB Debug Error:', err); }

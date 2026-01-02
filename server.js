@@ -10,7 +10,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-/* === ADD THIS DEBUG BLOCK RIGHT HERE === */
+
+/* === DEBUG: DB connection and tables === */
 pool.query('SELECT current_database()', [], (err, res) => {
   if (err) { console.error('DB Debug Error:', err); }
   else { console.log('Connected to DB:', res.rows[0].current_database); }
@@ -24,7 +25,10 @@ pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema 
 // Track connected sockets per conversation
 const chatRooms = {}; // { conversation_id: Set(ws) }
 
-wss.on('connection', function connection(ws) {
+wss.on('connection', function connection(ws, req) {
+  const ip = req.socket.remoteAddress;
+  console.log(`[WS] New connection from ${ip}`);
+
   let conversation_id = null;
 
   ws.on('message', async function incoming(raw) {
@@ -34,13 +38,14 @@ wss.on('connection', function connection(ws) {
       conversation_id = msg.join;
       chatRooms[conversation_id] = chatRooms[conversation_id] || new Set();
       chatRooms[conversation_id].add(ws);
+      console.log(`[WS] Joined room ${conversation_id} (${ip})`);
     }
     if (msg.message && msg.sender_id && conversation_id) {
       // Save to database
-     await pool.query(
-  'INSERT INTO group_messages (group_id, user_id, body, created_at) VALUES ($1, $2, $3, NOW())',
-  [conversation_id, msg.sender_id, msg.message]
-);
+      await pool.query(
+        'INSERT INTO group_messages (group_id, user_id, body, created_at) VALUES ($1, $2, $3, NOW())',
+        [conversation_id, msg.sender_id, msg.message]
+      );
       // Send to all in room
       chatRooms[conversation_id].forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -52,12 +57,16 @@ wss.on('connection', function connection(ws) {
           }));
         }
       });
+      console.log(`[WS] Message saved and broadcast in ${conversation_id}`);
     }
   });
 
   ws.on('close', () => {
     if (conversation_id && chatRooms[conversation_id]) {
       chatRooms[conversation_id].delete(ws);
+      console.log(`[WS] Disconnected from room ${conversation_id} (${ip})`);
+    } else {
+      console.log(`[WS] Disconnected (no room set) (${ip})`);
     }
   });
 });

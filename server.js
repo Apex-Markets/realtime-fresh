@@ -8,6 +8,17 @@ const wss = new WebSocket.Server({ server });
 // DB pool (Render's DATABASE_URL env var)
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+/* === ADD THIS DEBUG BLOCK RIGHT HERE === */
+pool.query('SELECT current_database()', [], (err, res) => {
+  if (err) { console.error('DB Debug Error:', err); }
+  else { console.log('Connected to DB:', res.rows[0].current_database); }
+});
+pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'", [], (err, res) => {
+  if (err) { console.error('DB Table Debug Error:', err); }
+  else { console.log('Tables in public schema:', res.rows.map(r => r.table_name)); }
+});
+/* ======================================= */
+
 // Track connected sockets per conversation
 const chatRooms = {}; // { conversation_id: Set(ws) }
 

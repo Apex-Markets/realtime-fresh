@@ -41,11 +41,7 @@ wss.on('connection', function connection(ws, req) {
       console.log(`[WS] Joined room ${conversation_id} (${ip})`);
     }
     if (msg.message && msg.sender_id && conversation_id) {
-      // Save to database
-      await pool.query(
-        'INSERT INTO group_messages (group_id, user_id, body, created_at) VALUES ($1, $2, $3, NOW())',
-        [conversation_id, msg.sender_id, msg.message]
-      );
+      
       // Send to all in room
       chatRooms[conversation_id].forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -57,7 +53,6 @@ wss.on('connection', function connection(ws, req) {
           }));
         }
       });
-      console.log(`[WS] Message saved and broadcast in ${conversation_id}`);
     }
   });
 
